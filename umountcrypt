@@ -1,0 +1,60 @@
+#!/bin/bash
+
+ARGC=$#
+ARG1=$1
+ARG2=$2
+
+usage() {
+	echo "umountcrypt: unmount LUKS virtual drive with ease."
+	echo -e "usage:\n\tumountcrypt YOURDRIVE MOUNTPOINT\n"
+}
+
+checkRoot() {
+	if [[ $UID != 0 ]]; then
+		echo "Please run this script as root."
+		exit 9
+	fi
+}
+
+
+errorMessages() {
+	if [[ $ARG1 == "-h" || $ARG1 == "help" ]]; then
+		usage
+		exit 1
+	fi
+
+	if (( $ARGC > 2 )); then
+		echo "Too many arguments."
+		usage
+		exit 1
+	fi
+	
+	if (( $ARGC == 0 )); then
+		echo "The following drives can be unmounted"
+		for i in $(ls /dev/mapper); do
+			if [[ $i == 'control' ]]; then
+				true
+			else
+				echo -e "\t- $i"
+			fi
+
+		done
+		exit 1
+	fi
+}
+
+main() {
+	checkRoot
+	errorMessages
+
+	CLS=$ARG1
+	MNT=$ARG2
+	
+	echo $SRCSRC $DST
+
+	cryptsetup luksClose $CLS
+	sleep 5
+	umount $MNT
+}
+
+main

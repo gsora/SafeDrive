@@ -1,0 +1,40 @@
+#!/bin/bash
+
+checkRoot() {
+	if [[ $UID != 0 ]]; then
+		echo "Please run this script as root."
+		exit 9
+	fi
+	}
+
+main() {
+	checkRoot
+
+	echo -e "Welcome to the SafeDrive creation setup, please provide a name for your SafeDrive.\nUse only dots (.), and underscores (_) if desired, any other illegal character will be stripped automatically.\n"
+
+	read NAME
+	NAME=$( echo "$NAME" | tr -d "[<>|/\\\&:?* ]")
+	
+	echo -e "Your encrypted virtual drive will be created into $PWD, after this setup it will  be safe to move it elsewhere.\n"
+
+	DPATH=$PWD/$NAME
+	echo -e "How many M/G/T?"
+	read SIZE
+	fallocate -l $SIZE $DPATH
+	echo -e "Now entering cryptsetup procedure, keep in mind that the password you'll choose (hopefully) cannot be recovered!\nPress enter to begin...\n"
+	read AAH
+
+	cryptsetup -c serpent -s 256 -h sha512 --use-urandom luksFormat $DPATH
+
+	echo -e "Mounting the newely created drive...\n"
+	cryptsetup open $DPATH $NAME
+
+	echo  -e "Formatting $DPATH in ext4...\n"
+	mkfs.ext4 -F -L $NAME /dev/mapper/$NAME > /dev/null
+	sleep 5
+	cryptsetup luksClose /dev/mapper/$NAME
+
+	echo "Done! Use 'mountcrypt' and 'umountcrypt' to easily mount and unmount your safe drive."
+	}
+
+main

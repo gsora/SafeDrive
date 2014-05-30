@@ -1,0 +1,61 @@
+#!/bin/bash
+
+ARGC=$#
+ARG1=$1
+ARG2=$2
+
+usage() {
+	echo "mountcrypt: mount LUKS virtual drive with ease."
+	echo -e "usage:\n\tmountcrypt YOURDRIVE MOUNTPOINT\n"
+}
+
+checkRoot() {
+	if [[ $UID != 0 ]]; then
+		echo "Please run this script as root."
+		exit 9
+	fi
+}
+
+
+errorMessages() {
+	if [[ $ARG1 == "-h" || $ARG1 == "help" ]]; then
+		usage
+		exit 1
+	fi
+
+	if (( $ARGC > 2 )); then
+		echo "Too many arguments."
+		usage
+		exit 1
+	fi
+	
+	if (( $ARGC == 0 )); then
+		echo "The following files in $PWD can be mounted:"
+		for i in $(ls); do
+			if [[ $(file $i | awk '{print $2}') == 'LUKS' ]]; then
+				echo -e "\t- $i"
+			fi
+		done
+		exit 1
+	fi
+}
+
+main() {
+	checkRoot
+	errorMessages
+
+	SRC=$ARG1
+	DST=$ARG2
+	
+	echo $SRCSRC $DST
+
+	cryptsetup open $SRC $SRC
+	if [[ ! -d $DST ]]; then
+		mkdir $DST
+	fi
+	
+	sleep 5
+	mount /dev/mapper/$SRC $DST
+}
+
+main
